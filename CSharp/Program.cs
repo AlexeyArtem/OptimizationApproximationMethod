@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -14,18 +15,29 @@ namespace CSharp
     {
         static void Main(string[] args)
         {
+            Stopwatch stopWatch = new Stopwatch();
+
             int degree;
             double step;
-            List<Point> points;
-            LoadDataFromJson(out degree, out step, out points);
+            List<Point> pointsList;
+            
+            LoadDataFromJson(out degree, out step, out pointsList);
+            pointsList = pointsList.OrderBy(p => p.X).ToList();
 
-            Approximation approximation = new Approximation(points);
-            List<Point> result = approximation.MethodOfMinimumRoots(degree, step);
-
-            foreach (Point p in result)
+            Point[] pointsArray = pointsList.ToArray();
+            int n = 100;
+            long totalTime = 0;
+            for (int i = 0; i < n; i++)
             {
-                Console.WriteLine("X: {0}; Y: {1}", p.X, p.Y);
+                stopWatch.Start();
+                Approximation.MethodOfMinimumRoots(pointsArray, degree, step); // array
+                //Approximation.MethodOfMinimumRoots(pointsList, degree, step); // list
+                stopWatch.Stop();
+                
+                totalTime += stopWatch.ElapsedMilliseconds;
+                stopWatch.Reset();
             }
+            Console.WriteLine("Average time: " + totalTime / n);
 
             Console.Read();
         }
@@ -50,7 +62,6 @@ namespace CSharp
                 point = point.Next;
             }
             while (point != null);
-            points = points.OrderBy(p => p.X).ToList();
         }
     }
 }

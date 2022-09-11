@@ -7,16 +7,9 @@ using System.Windows;
 
 namespace CSharp
 {
-    class Approximation
+    static class Approximation
     {
-        private List<Point> points;
-
-        public Approximation(List<Point> points)
-        {
-            this.points = points;
-        }
-
-        public List<Point> MethodOfMinimumRoots(int degree, double h)
+        public static List<Point> MethodOfMinimumRoots(List<Point> points, int degree, double h)
         {
             if (degree <= 0) throw new Exception("Степень должна быть положительным числом");
 
@@ -56,6 +49,55 @@ namespace CSharp
                     y += A[i, 0] * Math.Pow(x, i);
                 }
                 resultPoints.Add(new Point(x, y));
+            }
+
+            return resultPoints;
+        }
+
+        public static Point[] MethodOfMinimumRoots(Point[] points, int degree, double h)
+        {
+            if (degree <= 0) throw new Exception("Степень должна быть положительным числом");
+
+            int sizeResult = (int)(points[points.Length - 1].X / h); // ??
+            Point[] resultPoints = new Point[sizeResult];
+
+            // XA=Y
+            double[,] arguments = new double[points.Length, degree + 1]; // X
+            double[,] values = new double[points.Length, 1]; // Y
+
+            for (int i = 0; i < arguments.GetLength(0); i++)
+            {
+                for (int j = 0; j < arguments.GetLength(1); j++)
+                {
+                    arguments[i, j] = Math.Pow(points[i].X, j);
+                }
+            }
+
+            for (int i = 0; i < values.GetLength(0); i++)
+            {
+                for (int j = 0; j < values.GetLength(1); j++)
+                {
+                    values[i, j] = points[i].Y;
+                }
+            }
+
+            Matrix argumentsMatrix = new Matrix(arguments);
+            Matrix valuesMatrix = new Matrix(values);
+
+            Matrix first = (argumentsMatrix.GetTransporse() * argumentsMatrix).GetInverse();
+            Matrix second = argumentsMatrix.GetTransporse() * valuesMatrix;
+            Matrix A = first * second;
+
+            int k = 0;
+            for (double x = points[0].X; x <= points[points.Length - 1].X; x += h)
+            {
+                double y = 0;
+                for (int i = 0; i <= degree; i++)
+                {
+                    y += A[i, 0] * Math.Pow(x, i);
+                }
+                resultPoints[k] = new Point(x, y);
+                k++;
             }
 
             return resultPoints;
