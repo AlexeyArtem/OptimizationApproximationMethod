@@ -50,6 +50,7 @@ namespace CSharp
                 point = point.Next;
             }
             while (point != null);
+            points = points.OrderBy(p => p.X).ToList();
         }
     }
 }
