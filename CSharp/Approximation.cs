@@ -54,12 +54,12 @@ namespace CSharp
             return resultPoints;
         }
 
-        public static Point[] MethodOfMinimumRoots(Point[] points, int degree, double h)
+        public static List<Point> MethodOfMinimumRoots(Point[] points, int degree, double h)
         {
             if (degree <= 0) throw new Exception("Степень должна быть положительным числом");
 
             int sizeResult = (int)(points[points.Length - 1].X / h); // ??
-            Point[] resultPoints = new Point[sizeResult];
+            List<Point> resultPoints = new List<Point>();
 
             // XA=Y
             double[,] arguments = new double[points.Length, degree + 1]; // X
@@ -96,8 +96,51 @@ namespace CSharp
                 {
                     y += A[i, 0] * Math.Pow(x, i);
                 }
-                resultPoints[k] = new Point(x, y);
+                resultPoints.Add(new Point(x, y));
                 k++;
+            }
+
+            return resultPoints;
+        }
+
+        public static List<Point> MethodOfMinimumRoots(HashSet<Point> points, int degree, double h)
+        {
+            if (degree <= 0) throw new Exception("Степень должна быть положительным числом");
+
+            List<Point> resultPoints = new List<Point>();
+            // XA=Y
+            double[,] arguments = new double[points.Count, degree + 1]; // X
+            double[,] values = new double[points.Count, 1]; // Y
+
+            int i = 0;
+            foreach (Point p in points)
+            {
+                for (int j = 0; j < arguments.GetLength(1); j++)
+                {
+                    arguments[i, j] = Math.Pow(p.X, j);
+                }
+                for (int k = 0; k < values.GetLength(1); k++)
+                {
+                    values[i, k] = p.Y;
+                }
+                i++;
+            }
+
+            Matrix argumentsMatrix = new Matrix(arguments);
+            Matrix valuesMatrix = new Matrix(values);
+
+            Matrix first = (argumentsMatrix.GetTransporse() * argumentsMatrix).GetInverse();
+            Matrix second = argumentsMatrix.GetTransporse() * valuesMatrix;
+            Matrix A = first * second;
+
+            for (double x = points.First().X; x <= points.Last().X; x += h)
+            {
+                double y = 0;
+                for (int k = 0; k <= degree; k++)
+                {
+                    y += A[k, 0] * Math.Pow(x, k);
+                }
+                resultPoints.Add(new Point(x, y));
             }
 
             return resultPoints;

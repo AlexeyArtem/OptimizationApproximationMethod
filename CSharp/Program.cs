@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -25,13 +26,17 @@ namespace CSharp
             pointsList = pointsList.OrderBy(p => p.X).ToList();
 
             Point[] pointsArray = pointsList.ToArray();
+            HashSet<Point> pointsHashSet = new HashSet<Point>(pointsList);
+            //Hashtable pointsHashtable = new Hashtable(pointsList.ToDictionary(x => x.X, y => y.Y));
+
             int n = 100;
             long totalTime = 0;
             for (int i = 0; i < n; i++)
             {
                 stopWatch.Start();
-                Approximation.MethodOfMinimumRoots(pointsArray, degree, step); // array
+                //Approximation.MethodOfMinimumRoots(pointsArray, degree, step); // array
                 //Approximation.MethodOfMinimumRoots(pointsList, degree, step); // list
+                Approximation.MethodOfMinimumRoots(pointsHashSet, degree, step); // hashset
                 stopWatch.Stop();
                 
                 totalTime += stopWatch.ElapsedMilliseconds;
