@@ -18,55 +18,45 @@ namespace CSharp
         {
             Stopwatch stopWatch = new Stopwatch();
 
-            int degree;
-            double step;
-            List<Point> pointsList;
-            
-            LoadDataFromJson(out degree, out step, out pointsList);
-            pointsList = pointsList.OrderBy(p => p.X).ToList();
+            int degree = 5;
+            double step = 0.001;
 
+            List<Point> pointsList = Generator.GeneratePoints(1, 30, 10000);
+            //List<Point> pointsList = FileService.ReadFromJson<List<Point>>("testJson.json");
+
+            pointsList = pointsList.OrderBy(p => p.X).ToList(); // Перенести в метод аппроксимации
             Point[] pointsArray = pointsList.ToArray();
-            HashSet<Point> pointsHashSet = new HashSet<Point>(pointsList);
-            //Hashtable pointsHashtable = new Hashtable(pointsList.ToDictionary(x => x.X, y => y.Y));
 
-            int n = 100;
-            long totalTime = 0;
-            for (int i = 0; i < n; i++)
-            {
-                stopWatch.Start();
-                //Approximation.MethodOfMinimumRoots(pointsArray, degree, step); // array
-                //Approximation.MethodOfMinimumRoots(pointsList, degree, step); // list
-                Approximation.MethodOfMinimumRoots(pointsHashSet, degree, step); // hashset
-                stopWatch.Stop();
-                
-                totalTime += stopWatch.ElapsedMilliseconds;
-                stopWatch.Reset();
-            }
-            Console.WriteLine("Average time: " + totalTime / n);
+            //Console.WriteLine("Input data:");
+            //PrintPoints(pointsArray);
+
+            // Многопоточный метод
+            stopWatch.Start();
+            var resultParallel = Approximation.ParallelMethodOfMinimumRoots(pointsList, degree, step);
+            stopWatch.Stop();
+            Console.WriteLine("Many threads method time (ms): " + stopWatch.ElapsedMilliseconds);
+            
+            // Однопоточный метод
+            stopWatch.Start();
+            var resultSingle = Approximation.MethodOfMinimumRoots(pointsList, degree, step);
+            stopWatch.Stop();
+            Console.WriteLine("Single thread method time (ms): " + stopWatch.ElapsedMilliseconds);
+
+            //Console.WriteLine("\nMany threads result:");
+            //foreach (var p in resultParallel)
+            //    Console.WriteLine($"X: {p.X}; Y: {p.Y}");
+
+            //Console.WriteLine("\nSingle thread result:");
+            //foreach (var p in resultSingle)
+            //    Console.WriteLine($"X: {p.X}; Y: {p.Y}");
 
             Console.Read();
         }
 
-        static void LoadDataFromJson(out int degree, out double step, out List<Point> points)
+        static void PrintPoints(IEnumerable<Point> points) 
         {
-            string pathDebug = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string pathProject = Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(pathDebug)));
-            string pathJsonDataFile = Path.Combine(pathProject, "testData.json");
-
-            JObject dataJson = JObject.Parse(File.ReadAllText(pathJsonDataFile));
-            degree = dataJson.Value<int>("degree");
-            step = dataJson.Value<double>("step");
-
-            points = new List<Point>();
-            JToken point = dataJson.GetValue("points").First;
-            do
-            {
-                double x = point.Value<double>("X");
-                double y = point.Value<double>("Y");
-                points.Add(new Point(x, y));
-                point = point.Next;
-            }
-            while (point != null);
+            foreach (var p in points)
+                Console.WriteLine($"X: {p.X}; Y: {p.Y}");
         }
     }
 }
