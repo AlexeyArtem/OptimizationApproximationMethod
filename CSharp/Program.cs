@@ -20,11 +20,11 @@ namespace CSharp
 
             int degree = 5;
             double step = 0.001;
+            List<Point> pointsList = Generator.GeneratePoints(1, 30, 1000000);
+            //var pointsList = FileService.ReadFromJson<List<Point>>("data.json");
 
-            List<Point> pointsList = Generator.GeneratePoints(1, 30, 10000);
-            //List<Point> pointsList = FileService.ReadFromJson<List<Point>>("testJson.json");
-
-            pointsList = pointsList.OrderBy(p => p.X).ToList(); // Перенести в метод аппроксимации
+            //pointsList = pointsList.AsParallel().OrderBy(p => p.X).ToList();
+            //pointsList = pointsList.OrderBy(p => p.X).ToList();
             Point[] pointsArray = pointsList.ToArray();
 
             //Console.WriteLine("Input data:");
@@ -34,14 +34,15 @@ namespace CSharp
             stopWatch.Start();
             var resultParallel = Approximation.ParallelMethodOfMinimumRoots(pointsList, degree, step);
             stopWatch.Stop();
-            Console.WriteLine("Many threads method time (ms): " + stopWatch.ElapsedMilliseconds);
-            
+            Console.WriteLine("Multithreaded method time (ms): " + stopWatch.ElapsedMilliseconds);
+
             // Однопоточный метод
-            stopWatch.Start();
+            stopWatch.Restart();
             var resultSingle = Approximation.MethodOfMinimumRoots(pointsList, degree, step);
             stopWatch.Stop();
             Console.WriteLine("Single thread method time (ms): " + stopWatch.ElapsedMilliseconds);
 
+            // Вывод результата
             //Console.WriteLine("\nMany threads result:");
             //foreach (var p in resultParallel)
             //    Console.WriteLine($"X: {p.X}; Y: {p.Y}");

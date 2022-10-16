@@ -93,6 +93,7 @@ namespace CSharp
             }
         }
 
+        // Добавить многопоточный метод
         private double GetAlgebraicExtra(double[,] matrix, int indexRow, int indexColumn)
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
@@ -148,6 +149,30 @@ namespace CSharp
             return m.GetTransporse() * koef;
         }
 
+        public Matrix GetInverseAsParallel()
+        {
+            if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
+
+            double det = GetDeterminantAsParallel();
+            if (det == 0) throw new DeterminantIsNullException("Детерминант равен нулю");
+
+            double[,] extraMatrix = new double[Rows, Columns];
+
+            Parallel.For(0, extraMatrix.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < extraMatrix.GetLength(1); j++)
+                {
+                    extraMatrix[i, j] = GetAlgebraicExtra(values, i + 1, j + 1);
+                }
+            });
+
+            double koef = 1 / det;
+            Matrix m = new Matrix(extraMatrix);
+
+            return m.GetTransporseAsParallel() * koef;
+        }
+
+        // Добавить многопоточный метод
         public Matrix GetTriangular() 
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
@@ -201,6 +226,21 @@ namespace CSharp
             return new Matrix(values);
         }
 
+        public Matrix GetTransporseAsParallel()
+        {
+            double[,] values = new double[this.values.GetLength(1), this.values.GetLength(0)];
+
+            Parallel.For(0, values.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < values.GetLength(1); j++)
+                {
+                    values[i, j] = this.values[j, i];
+                }
+            });
+
+            return new Matrix(values);
+        }
+
         public double[,] GetValues() 
         {
             return values.Clone() as double[,];
@@ -221,6 +261,21 @@ namespace CSharp
             return det;
         }
 
+        public double GetDeterminantAsParallel()
+        {
+            if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
+
+            Matrix m = GetTriangular();
+            double det = 1;
+
+            Parallel.For(0, values.GetLength(0), (i) => 
+            {
+                det *= m[i, i];
+            });
+
+            return det;
+        }
+
         public double GetFirstNorm() 
         {
             double norm = 0;
@@ -235,6 +290,40 @@ namespace CSharp
             }
 
             return norm;
+        }
+
+        public static double[,] MultiplicationAsParallel(double[,] a, double[,] b)
+        {
+            double[,] r = new double[a.GetLength(0), b.GetLength(1)];
+            Parallel.For(0, a.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < b.GetLength(1); j++)
+                {
+                    for (int k = 0; k < b.GetLength(0); k++)
+                    {
+                        r[i, j] += a[i, k] * b[k, j];
+                    }
+                }
+            });
+            return r;
+        }
+
+        public static Matrix MultiplicationAsParallel(Matrix matrixA, Matrix matrixB)
+        {
+            if (matrixA.Columns != matrixB.Rows) throw new MatrixSizesMismatchException("Количество строк и столбцов перемножаемых матриц не совпадают.");
+
+            double[,] result = new double[matrixA.Rows, matrixB.Columns];
+            Parallel.For(0, result.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < result.GetLength(1); j++)
+                {
+                    for (int k = 0; k < matrixA.Columns; k++)
+                    {
+                        result[i, j] += matrixA[i, k] * matrixB[k, j];
+                    }
+                }
+            });
+            return new Matrix(result);
         }
 
         public static Matrix operator*(Matrix matrix, double num) 
@@ -253,7 +342,7 @@ namespace CSharp
 
         public static Matrix operator*(Matrix matrixA, Matrix matrixB) 
         {
-            if (matrixA.Columns != matrixB.Rows) throw new Exception("Количество строк и столбцов перемножаемых матриц не совпадают.");
+            if (matrixA.Columns != matrixB.Rows) throw new MatrixSizesMismatchException("Количество строк и столбцов перемножаемых матриц не совпадают.");
             
             double[,] result = new double[matrixA.Rows, matrixB.Columns];
 
@@ -269,22 +358,6 @@ namespace CSharp
             }
 
             return new Matrix(result);
-        }
-
-        public static double[,] Multiplication(double[,] a, double[,] b)
-        {
-            double[,] r = new double[a.GetLength(0), b.GetLength(1)];
-            Parallel.For(0, a.GetLength(0), (i) =>
-            {
-                for (int j = 0; j < b.GetLength(1); j++)
-                {
-                    for (int k = 0; k < b.GetLength(0); k++)
-                    {
-                        r[i, j] += a[i, k] * b[k, j];
-                    }
-                }
-            });
-            return r;
         }
 
         public static Matrix operator -(Matrix matrixA, Matrix matrixB)

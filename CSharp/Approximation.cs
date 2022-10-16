@@ -203,9 +203,9 @@ namespace CSharp
             Matrix argumentsMatrix = new Matrix(arguments);
             Matrix valuesMatrix = new Matrix(values);
 
-            Matrix first = (argumentsMatrix.GetTransporse() * argumentsMatrix).GetInverse();
-            Matrix second = argumentsMatrix.GetTransporse() * valuesMatrix;
-            Matrix A = first * second;
+            Matrix first = Matrix.MultiplicationAsParallel(argumentsMatrix.GetTransporseAsParallel(), argumentsMatrix).GetTransporseAsParallel();
+            Matrix second = Matrix.MultiplicationAsParallel(argumentsMatrix.GetTransporseAsParallel(), valuesMatrix);
+            Matrix A = Matrix.MultiplicationAsParallel(first, second);
 
             for (double x = points.First().X; x <= points.Last().X; x += h)
             {
