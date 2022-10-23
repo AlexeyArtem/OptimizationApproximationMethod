@@ -18,12 +18,24 @@
     <ClCompile Include="CPP.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="D:\University\Распределенные информационно-аналитические системы\Лабы по C++\Matrixes\Matrix.cpp">
+    <ClCompile Include="Approximation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Point.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\University\Распределенные информационно-аналитические системы\Лабы по C++\Matrixes\Matrix.h">
+    <ClInclude Include="Approximation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Point.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

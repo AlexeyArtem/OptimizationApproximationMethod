@@ -139,11 +139,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Approximation.cpp" />
     <ClCompile Include="CPP.cpp" />
-    <ClCompile Include="D:\University\Распределенные информационно-аналитические системы\Лабы по C++\Matrixes\Matrix.cpp" />
+    <ClCompile Include="Matrix.cpp" />
+    <ClCompile Include="Point.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D:\University\Распределенные информационно-аналитические системы\Лабы по C++\Matrixes\Matrix.h" />
+    <ClInclude Include="Approximation.h" />
+    <ClInclude Include="Matrix.h" />
+    <ClInclude Include="Point.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
