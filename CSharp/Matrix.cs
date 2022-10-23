@@ -68,6 +68,21 @@ namespace CSharp
             return copyValues;
         }
 
+        private double[,] CopyMatrixValuesAsParallel(double[,] values)
+        {
+            double[,] copyValues = new double[values.GetLength(0), values.GetLength(1)];
+
+            Parallel.For(0, copyValues.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < copyValues.GetLength(1); j++)
+                {
+                    copyValues[i, j] = values[i, j];
+                }
+            });
+
+            return copyValues;
+        }
+
         private double[,] CopyMatrixValues(Matrix matrix)
         {
             double[,] copyValues = new double[matrix.Rows, matrix.Columns];
@@ -93,12 +108,9 @@ namespace CSharp
             }
         }
 
-        // Добавить многопоточный метод
         private double GetAlgebraicExtra(double[,] matrix, int indexRow, int indexColumn)
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
-
-            
             if (indexRow > matrix.GetLength(0) || indexColumn > matrix.GetLength(1) || indexRow < 1 || indexColumn < 1)
                 throw new IndexOutOfRangeException();
 
@@ -106,7 +118,6 @@ namespace CSharp
 
             int row, col;
             row = col = 0;
-
             for (int i = 0; i < matrix.GetLength(1); i++)
             {
                 for (int j = 0; j < matrix.GetLength(0); j++)
@@ -122,6 +133,36 @@ namespace CSharp
             }
             Matrix m = new Matrix(minor);
             double algExtra = m.GetDeterminant() * Math.Pow(-1, indexRow + indexColumn);
+
+            return algExtra;
+        }
+
+        private double GetAlgebraicExtraAsParallel(double[,] matrix, int indexRow, int indexColumn)
+        {
+            if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
+            if (indexRow > matrix.GetLength(0) || indexColumn > matrix.GetLength(1) || indexRow < 1 || indexColumn < 1)
+                throw new IndexOutOfRangeException();
+
+            double[,] minor = new double[matrix.GetLength(0) - 1, matrix.GetLength(1) - 1];
+
+            int row, col;
+            row = col = 0;
+            // Можно ли распараллелить данный цикл?
+            for (int i = 0; i < matrix.GetLength(1); i++)
+            {
+                for (int j = 0; j < matrix.GetLength(0); j++)
+                {
+                    if (i + 1 != indexRow && j + 1 != indexColumn)
+                    {
+                        minor[row, col] = matrix[i, j];
+                        col++;
+                    }
+                }
+                col = 0;
+                if (i + 1 != indexRow) row++;
+            }
+            Matrix m = new Matrix(minor);
+            double algExtra = m.GetDeterminantAsParallel() * Math.Pow(-1, indexRow + indexColumn);
 
             return algExtra;
         }
@@ -162,7 +203,7 @@ namespace CSharp
             {
                 for (int j = 0; j < extraMatrix.GetLength(1); j++)
                 {
-                    extraMatrix[i, j] = GetAlgebraicExtra(values, i + 1, j + 1);
+                    extraMatrix[i, j] = GetAlgebraicExtraAsParallel(values, i + 1, j + 1);
                 }
             });
 
@@ -172,13 +213,13 @@ namespace CSharp
             return m.GetTransporseAsParallel() * koef;
         }
 
-        // Добавить многопоточный метод
         public Matrix GetTriangular() 
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
 
             double[,] values = CopyMatrixValues(this.values);
 
+            // Можно ли распараллелить этот цикл?
             for (int i = 0; i < values.GetLength(0) - 1; i++)
             {
                 for (int j = i + 1; j < values.GetLength(1); j++)
@@ -207,6 +248,44 @@ namespace CSharp
                     if (double.IsNaN(values[i, j])) values[i, j] = 0;
                 }
             }
+
+            return new Matrix(values);
+        }
+
+        public Matrix GetTriangularAsParallel()
+        {
+            if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
+
+            double[,] values = CopyMatrixValuesAsParallel(this.values);
+
+            // Можно ли распараллелить даный цикл?
+            for (int i = 0; i < values.GetLength(0) - 1; i++)
+            {
+                for (int j = i + 1; j < values.GetLength(1); j++)
+                {
+                    double coef;
+                    if (values[i, i] == 0)
+                    {
+                        for (int k = 0; k < values.GetLength(1); k++)
+                        {
+                            values[i, k] += values[i + 1, k];
+                        }
+                        coef = values[j, i] / values[i, i];
+                    }
+                    else coef = values[j, i] / values[i, i];
+
+                    for (int k = i; k < values.GetLength(0); k++)
+                        values[j, k] -= values[i, k] * coef;
+                }
+            }
+
+            Parallel.For(0, values.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < values.GetLength(1); j++)
+                {
+                    if (double.IsNaN(values[i, j])) values[i, j] = 0;
+                }
+            });
 
             return new Matrix(values);
         }
@@ -265,7 +344,7 @@ namespace CSharp
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
 
-            Matrix m = GetTriangular();
+            Matrix m = GetTriangularAsParallel();
             double det = 1;
 
             Parallel.For(0, values.GetLength(0), (i) => 
