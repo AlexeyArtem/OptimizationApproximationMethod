@@ -15,6 +15,10 @@ public:
 	int getColumns() { return columns; }
 	matrix getTransporse();
 	matrix getInverse();
+	double getDeterminant();
+	matrix getTriangular();
+	double getAlgebraicExtra(int indexRow, int indexColumn);
+	double** copyMatrixValues();
 
 	double& operator() (int i, int j);
 	matrix operator+ (matrix matrixB);

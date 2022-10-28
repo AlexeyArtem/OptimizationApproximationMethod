@@ -42,6 +42,142 @@ matrix matrix::getTransporse()
 	return result;
 }
 
+double matrix::getDeterminant()
+{
+	if (!isQuadraticity)
+		throw new std::exception("Матрица не является квадратичной.");
+
+	matrix triangular = this->getTriangular();
+	double det = 1;
+	for (int i = 0; i < this->rows; i++)
+	{
+		det = det * triangular(i, i);
+	}
+
+	return det;
+}
+
+matrix matrix::getTriangular()
+{
+	if (!isQuadraticity)
+		throw new std::exception("Матрица не является квадратичной.");
+
+	double** values = copyMatrixValues();
+	for (int i = 0; i < this->rows - 1; i++)
+	{
+		for (int j = i + 1; j < this->columns; j++)
+		{
+			double coef;
+			if (values[i][i] == 0)
+			{
+				for (int k = 0; k < this->columns; k++)
+				{
+					values[i][k] += values[i + 1][k];
+				}
+				coef = values[j][i] / values[i][i];
+			}
+			else
+			{
+				coef = values[j][i] / values[i][i];
+			}
+
+			for (int k = i; k < this->rows; k++)
+			{
+				values[j][k] -= values[i][k] * coef;
+			}
+		}
+	}
+
+	for (int i = 0; i < this->rows; i++)
+	{
+		for (int j = 0; j < this->columns; j++)
+		{
+			double value = values[i][j];
+			if (std::isnan(value))
+			{
+				values[i][j] = 0;
+			}
+		}
+	}
+
+	return matrix(values, this->rows, this->columns);
+}
+
+double** matrix::copyMatrixValues()
+{
+	double** values = new double* ();
+	for (size_t i = 0; i < this->rows; i++)
+	{
+		values[i] = new double[this->columns];
+		for (size_t j = 0; j < this->columns; j++)
+		{
+			values[i][j] = this->values[i][j];
+		}
+	}
+
+	return values;
+}
+
+matrix matrix::getInverse() 
+{
+	if (!isQuadraticity) throw new std::exception("Матрица не является квадратичной.");
+
+	double det = getDeterminant();
+	if (det == 0) throw new std::exception("Детерминант равен 0.");
+
+	double** extraMatrix = new double* [this->rows];
+	for (size_t i = 0; i < rows; i++)
+	{
+		extraMatrix[i] = new double[columns];
+	}
+
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < columns; j++)
+		{
+			extraMatrix[i][j] = getAlgebraicExtra(i + 1, j + 1);
+		}
+	}
+
+	double koef = 1 / det;
+	matrix m(extraMatrix, rows, columns);
+	
+	return m.getTransporse() * koef;
+}
+
+double matrix::getAlgebraicExtra(int indexRow, int indexColumn)
+{
+	if (!isQuadraticity) throw new std::exception("Матрица не является квадратичной.");
+	if (indexRow > rows || indexColumn > columns || indexRow < 1 || indexColumn < 1)
+		throw new std::exception("Ошибка");
+
+	
+	//double** minor = new double* [rows - 1];
+	matrix minor = matrix(this->rows - 1, this->columns - 1);
+
+	int row, col;
+	row = 0;
+	col = 0;
+
+	for (int i = 0; i < this->getRows(); i++)
+	{
+		for (int j = 0; j < this->getColumns(); j++)
+		{
+			if (i + 1 != indexRow && j + 1 != indexColumn)
+			{
+				minor(row, col) = this->values[i][j];
+				col++;
+			}
+		}
+		col = 0;
+		if (i + 1 != indexRow) row++;
+	}
+
+	double algExtra = minor.getDeterminant() * pow(-1, indexRow + indexColumn);
+
+	return algExtra;
+}
+
 double& matrix::operator() (int row, int col) 
 {
 	assert(row >= 0 && row < this->rows);
