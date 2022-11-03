@@ -26,10 +26,11 @@ namespace CSharp
                 {
                     arguments[i, j] = Math.Pow(point.X, j);
                 }
-                for (int j = 0; j < values.GetLength(1); j++)
-                {
-                    values[i, j] = point.Y;
-                }
+                values[i, 0] = point.Y;
+                //for (int j = 0; j < values.GetLength(1); j++)
+                //{
+                //    values[i, j] = point.Y;
+                //}
                 i++;
             }
 
@@ -68,10 +69,11 @@ namespace CSharp
                 {
                     arguments[i, j] = Math.Pow(points[i].X, j);
                 }
-                for (int j = 0; j < values.GetLength(1); j++)
-                {
-                    values[i, j] = points[i].Y;
-                }
+                values[i, 0] = points[i].Y;
+                //for (int j = 0; j < values.GetLength(1); j++)
+                //{
+                //    values[i, j] = points[i].Y;
+                //}
             }
 
             Matrix argumentsMatrix = new Matrix(arguments);
@@ -179,10 +181,11 @@ namespace CSharp
                 {
                     arguments[i, j] = Math.Pow(points[i].X, j);
                 }
-                for (int k = 0; k < values.GetLength(1); k++)
-                {
-                    values[i, k] = points[i].Y;
-                }
+                values[i, 0] = points[i].Y;
+                //for (int k = 0; k < values.GetLength(1); k++)
+                //{
+                //    values[i, k] = points[i].Y;
+                //}
             });
             #endregion
 
@@ -297,10 +300,11 @@ namespace CSharp
                 {
                     arguments[i, j] = Math.Pow(points[i].X, j);
                 }
-                for (int k = 0; k < values.GetLength(1); k++)
-                {
-                    values[i, k] = points[i].Y;
-                }
+                values[i, 0] = points[i].Y;
+                //for (int k = 0; k < values.GetLength(1); k++)
+                //{
+                //    values[i, k] = points[i].Y;
+                //}
             });
             #endregion
 

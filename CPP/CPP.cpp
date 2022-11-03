@@ -78,8 +78,9 @@ int main()
 	auto start = std::chrono::high_resolution_clock::now();
 	std::list<point>* resultApproximation = approximation::methodOfMinimumRoots(points, countPoints, degree, step);
 	auto end = std::chrono::high_resolution_clock::now();
+	
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
 	//Проблема с выводом времени на экран.
-	//std::cout << "time (ms): " << elapsed.count() << "fds";
+	std::cout << "time (ms): " << elapsed.count();
 }
