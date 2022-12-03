@@ -57,6 +57,18 @@ void displayArr(double** arr, int n, int m)
 	}
 }
 
+void displayMatrix(matrix matrix, int n, int m)
+{
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < m; j++)
+		{
+			std::cout << matrix(i, j) << " ";
+		}
+		std::cout << "\n";
+	}
+}
+
 void displayList(std::list<point>* points)
 {
 	for (point point : *points)
@@ -67,6 +79,26 @@ void displayList(std::list<point>* points)
 
 int main()
 {
+	double** valuesA = new double* [4];
+	double** valuesB = new double* [4];
+	for (int count = 0; count < 4; ++count)
+	{
+		valuesA[count] = new double[1, 2, 3, 4];
+		valuesB[count] = new double[4, 3, 2, 1];
+	}
+	
+	matrix matrixA = matrix(valuesA, 4, 4);
+	double x = 1;
+	double& rx = x;
+	double y = rx;
+	std::cout << rx;
+	
+	matrix matrixB = matrix(valuesB, 4, 4);
+	matrix result = matrixA + matrixB;
+
+
+	displayMatrix(result, 4, 4);
+
 	int countPoints = 1000000;
 	double** points = Generator::generatePoints(1, 30, countPoints);
 	quickSortArrRows(points, 0, countPoints - 1);

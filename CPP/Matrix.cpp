@@ -2,6 +2,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <cassert>
+#include "thread"
 
 matrix::matrix(double** values, int rows, int columns)
 {
@@ -186,6 +187,20 @@ double& matrix::operator() (int row, int col)
 	return this->values[row][col];
 }
 
+void sum(matrix result, matrix matrixA, matrix matrixB, int startIndex, int endIndex)
+{
+	if (startIndex < 0 || endIndex < 0)
+		throw std::invalid_argument("");
+
+	for (size_t i = startIndex; i < endIndex; i++)
+	{
+		for (size_t j = 0; j < result.getColumns(); j++)
+		{
+			result(i, j) = matrixA(i, j) + matrixB(i, j);
+		}
+	}
+}
+
 matrix matrix::operator+ (matrix matrixB)
 {
 	if (matrixB.columns != this->columns || matrixB.rows != this->rows)
@@ -194,6 +209,33 @@ matrix matrix::operator+ (matrix matrixB)
 	matrix matrixA = (*this);
 
 	matrix result(this->rows, this->columns);
+
+	int processor_count = std::thread::hardware_concurrency(); // Количество ядер
+	std::thread* threads = new std::thread[processor_count];
+
+	int startIndex = 0;
+	int countElements = rows / processor_count; // Количество элементов, которые обрабатываются одним потоком
+	int remnant = rows % processor_count; // Остаток от деления
+	int endIndex = countElements;
+
+	startIndex = 0;
+	endIndex = countElements;
+
+	//for (size_t i = 0; i < processor_count; i++) // Запуск потоков 
+	//{
+	//	if (remnant != 0 && i == processor_count - 1)
+	//		endIndex += remnant;
+
+	//	threads[i] = std::thread(sum, result, matrixA, matrixB, startIndex, endIndex);
+
+	//	startIndex = endIndex;
+	//	endIndex += countElements;
+	//}
+	//for (size_t i = 0; i < processor_count; i++) // Ожидание завершения потоков 
+	//{
+	//	threads[i].join();
+	//}
+
 	for (int i = 0; i < this->rows; i++)
 	{
 		for (int j = 0; j < this->columns; j++)
