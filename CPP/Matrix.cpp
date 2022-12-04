@@ -1,6 +1,8 @@
 #include "matrix.h"
 #include <stdexcept>
 #include <iostream>
+#include <cmath>
+#include <iomanip>
 #include <cassert>
 #include "thread"
 
@@ -43,13 +45,13 @@ matrix matrix::getTranspose()
 	return result;
 }
 
-void transpose(matrix result, matrix original, int startIndex, int endIndex)
+void matrix::transpose(matrix* result, int startIndex, int endIndex)
 {
 	for (int i = startIndex; i < endIndex; i++)
 	{
-		for (int j = 0; j < original.getColumns(); j++)
+		for (int j = 0; j < result->getColumns(); j++)
 		{
-			result(i, j) = original(j, i);
+			(*result)(i, j) = this->values[j][i];
 		}
 	}
 }
@@ -57,7 +59,6 @@ void transpose(matrix result, matrix original, int startIndex, int endIndex)
 matrix matrix::getTransposeAsParallel()
 {
 	matrix result(this->columns, this->rows);
-	matrix matrix = (*this);
 	
 	int processor_count = std::thread::hardware_concurrency(); // Количество ядер
 	std::thread* threads = new std::thread[processor_count];
@@ -75,7 +76,7 @@ matrix matrix::getTransposeAsParallel()
 		if (remnant != 0 && i == processor_count - 1)
 			endIndex += remnant;
 
-		threads[i] = std::thread(transpose, result, matrix, startIndex, endIndex);
+		threads[i] = std::thread(&matrix::transpose, this, &result, startIndex, endIndex);
 
 		startIndex = endIndex;
 		endIndex += countElements;
@@ -88,11 +89,11 @@ matrix matrix::getTransposeAsParallel()
 	return result;
 }
 
-void determinant(std::atomic<double>& det, matrix triangular, matrix matrix, int startIndex, int endIndex)
+void matrix::determinant(std::atomic<double>& det, matrix* triangular, int startIndex, int endIndex)
 {
 	for (int i = startIndex; i < endIndex; i++)
 	{
-		det = det * triangular(i, i);
+		det = det * (*triangular)(i, i);
 	}
 }
 
@@ -102,7 +103,6 @@ double matrix::getDeterminantAsParallel()
 		throw new std::exception("Матрица не является квадратичной.");
 
 	matrix triangular = this->getTriangular();
-	matrix matrix = (*this);
 
 	std::atomic<double> det = 1;
 
@@ -122,7 +122,7 @@ double matrix::getDeterminantAsParallel()
 		if (remnant != 0 && i == processor_count - 1)
 			endIndex += remnant;
 
-		threads[i] = std::thread(determinant, std::ref(det), triangular, matrix, startIndex, endIndex);
+		threads[i] = std::thread(&matrix::determinant, this, std::ref(det), &triangular, startIndex, endIndex);
 
 		startIndex = endIndex;
 		endIndex += countElements;
@@ -159,7 +159,7 @@ matrix matrix::getTriangular()
 
 	double** values = copyMatrixValues();
 
-	for (size_t i = 0; i < this->rows; i++)
+	/*for (size_t i = 0; i < this->rows; i++)
 	{
 		for (size_t j = 0; j < this->columns; j++)
 		{
@@ -176,7 +176,7 @@ matrix matrix::getTriangular()
 			std::cout << values[i][j] << " ";
 		}
 		std::cout << "\n";
-	}
+	}*/
 
 	for (int i = 0; i < this->rows - 1; i++)
 	{
@@ -268,7 +268,7 @@ double** matrix::copyAsParallel()
 
 double** matrix::copyMatrixValues()
 {
-	double** values = new double* ();
+	double** values = new double*[this->rows];
 	for (size_t i = 0; i < this->rows; i++)
 	{
 		values[i] = new double[this->columns];
@@ -296,10 +296,10 @@ matrix matrix::getInverseAsParallel()
 {
 	if (!isQuadraticity) throw new std::exception("Матрица не является квадратичной.");
 
-	double det = getDeterminant();
+	double det = getDeterminantAsParallel();
 	if (det == 0) throw new std::exception("Детерминант равен 0.");
 
-	double** extraMatrix = new double* [this->rows];
+	double** extraMatrix = new double*[this->rows];
 	for (size_t i = 0; i < rows; i++)
 	{
 		extraMatrix[i] = new double[columns];
@@ -572,7 +572,28 @@ matrix matrix::operator- (matrix matrixB) // Many threads
 //	return result;
 //}
 
-void mult(matrix result, matrix matrixA, matrix matrixB, int startIndex, int endIndex)
+//void matrix::multiplication(matrix* result, matrix* matrixB, int startIndex, int endIndex)
+//{
+//	if (startIndex < 0 || endIndex < 0)
+//		throw std::invalid_argument("");
+//
+//	matrix matrixA = (*this);
+//
+//	for (size_t i = startIndex; i < endIndex; i++)
+//	{
+//		for (size_t j = 0; j < result->getColumns(); j++)
+//		{
+//			double value = 0;
+//			for (int k = 0; k < matrixA.getColumns(); k++)
+//			{
+//				value += matrixA(i, k) * (*matrixB)(k, j);
+//			}
+//			(*result)(i, j) = value;
+//		}
+//	}
+//}
+
+void multiplication(matrix result, matrix matrixA, matrix matrixB, int startIndex, int endIndex)
 {
 	if (startIndex < 0 || endIndex < 0)
 		throw std::invalid_argument("");
@@ -593,12 +614,10 @@ void mult(matrix result, matrix matrixA, matrix matrixB, int startIndex, int end
 
 matrix matrix::operator* (matrix matrixB) //Many thread
 {
-	if (this->columns != matrixB.rows)
+	if (columns != matrixB.rows)
 		throw new std::exception("Количество строк и столбцов перемножаемых матриц не совпадают.");
 
-	matrix matrixA = (*this);
-
-	matrix result(matrixA.rows, matrixB.columns);
+	matrix result(rows, matrixB.columns);
 	
 	int processor_count = std::thread::hardware_concurrency(); // Количество ядер
 	std::thread* threads = new std::thread[processor_count];
@@ -616,7 +635,7 @@ matrix matrix::operator* (matrix matrixB) //Many thread
 		if (remnant != 0 && i == processor_count - 1)
 			endIndex += remnant;
 
-		threads[i] = std::thread(mult, result, matrixA, matrixB, startIndex, endIndex);
+		threads[i] = std::thread(multiplication, result, (*this), matrixB, startIndex, endIndex);
 
 		startIndex = endIndex;
 		endIndex += countElements;
@@ -643,4 +662,16 @@ matrix matrix::operator* (double num)
 	}
 
 	return result;
+}
+
+void matrix::display()
+{
+	for (size_t i = 0; i < this->rows; i++)
+	{
+		for (size_t j = 0; j < this->columns; j++)
+		{
+			std::cout << std::fixed << std::setprecision(0) << this->values[i][j] << " ";
+		}
+		std::cout << "\n";
+	}
 }

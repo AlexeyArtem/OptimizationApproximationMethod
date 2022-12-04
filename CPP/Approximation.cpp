@@ -122,7 +122,7 @@ std::list<point>* approximation::methodOfMinimumRoots(double** points, int count
 
 	matrix argumentsMatrix(arguments, rows, argColumns);
 	matrix valuesMatrix(values, rows, valuesColumns);
-
+	
 	matrix first = (argumentsMatrix.getTranspose() * argumentsMatrix).getInverse();
 	matrix second = argumentsMatrix.getTranspose() * valuesMatrix;
 	matrix A = first * second;
@@ -193,9 +193,7 @@ std::list<point>* approximation::parallelMethodOfMinimumRoots(double** points, i
 	matrix argumentsMatrix(arguments, rows, argumentsColumns);
 	matrix valuesMatrix(values, rows, valuesColumns);
 
-	matrix first = argumentsMatrix.getTransposeAsParallel() * argumentsMatrix;
-	
-	matrix temp = first.getInverseAsParallel();
+	matrix first = (argumentsMatrix.getTransposeAsParallel() * argumentsMatrix).getInverseAsParallel();
 	matrix second = argumentsMatrix.getTransposeAsParallel() * valuesMatrix;
 	matrix A = first * second;
 

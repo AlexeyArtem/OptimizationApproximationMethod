@@ -79,6 +79,7 @@ void displayList(std::list<point>* points)
 
 int main()
 {
+#pragma region Temp
 	//double** valuesA = new double* [2];
 	//double** valuesB = new double* [2];
 	//for (int count = 0; count < 2; count++)
@@ -105,21 +106,26 @@ int main()
 
 	////std::cout << result;
 	//displayMatrix(result, 3, 3);
+#pragma endregion
 
 	int countPoints = 1000000;
 	double** points = Generator::generatePoints(1, 30, countPoints);
 	quickSortArrRows(points, 0, countPoints - 1);
-	//std::list<point>* listPoints = Generator::generatePointsList(1, 9, countPoints);
 
 	int degree = 5;
 	double step = 0.001;
 
 	auto start = std::chrono::high_resolution_clock::now();
-	std::list<point>* resultApproximation = approximation::parallelMethodOfMinimumRoots(points, countPoints, degree, step);
+	std::list<point>* resultApproximation = approximation::methodOfMinimumRoots(points, countPoints, degree, step);
 	auto end = std::chrono::high_resolution_clock::now();
-	
-	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-	//Проблема с выводом времени на экран.
-	std::cout << "time (ms): " << elapsed.count();
+	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "Time working single thread method (ms): " << elapsed.count() << std::endl;
+
+	start = std::chrono::high_resolution_clock::now();
+	std::list<point>* resultApproximationParallel = approximation::parallelMethodOfMinimumRoots(points, countPoints, degree, step);
+	end = std::chrono::high_resolution_clock::now();
+
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	std::cout << "Time working many threads method (ms): " << elapsed.count();
 }

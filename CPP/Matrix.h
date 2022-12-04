@@ -1,4 +1,5 @@
 #pragma once
+#include <iomanip>
 class matrix
 {
 private:
@@ -7,7 +8,9 @@ private:
 	bool isQuadraticity = false;
 	double** values;
 	void inverse(double** extraMatrix, int startIndex, int endIndex);
-	//void transpose(matrix result, matrix original, int startIndex, int endIndex);
+	void transpose(matrix* result, int startIndex, int endIndex);
+	void determinant(std::atomic<double>& det, matrix* triangular, int startIndex, int endIndex);
+	//void multiplication(matrix* result, matrix* matrixB, int startIndex, int endIndex);
 
 public:
 	matrix(double** values, int rows, int columns);
@@ -25,6 +28,7 @@ public:
 	double getAlgebraicExtra(int indexRow, int indexColumn);
 	double** copyMatrixValues();
 	double** copyAsParallel();
+	void display();
 
 	double& operator() (int i, int j);
 	matrix operator+ (matrix matrixB);
