@@ -79,25 +79,32 @@ void displayList(std::list<point>* points)
 
 int main()
 {
-	double** valuesA = new double* [4];
-	double** valuesB = new double* [4];
-	for (int count = 0; count < 4; ++count)
-	{
-		valuesA[count] = new double[1, 2, 3, 4];
-		valuesB[count] = new double[4, 3, 2, 1];
-	}
-	
-	matrix matrixA = matrix(valuesA, 4, 4);
-	double x = 1;
-	double& rx = x;
-	double y = rx;
-	std::cout << rx;
-	
-	matrix matrixB = matrix(valuesB, 4, 4);
-	matrix result = matrixA + matrixB;
+	//double** valuesA = new double* [2];
+	//double** valuesB = new double* [2];
+	//for (int count = 0; count < 2; count++)
+	//{
+	//	valuesA[count] = new double[2] {5, 7};
+	//	valuesB[count] = new double[2] {3, 5};
+	//}
 
+	//matrix matrixA = matrix(valuesA, 2, 2);
+	//
+	//matrix matrixB = matrix(valuesB, 2, 2);
 
-	displayMatrix(result, 4, 4);
+	//matrix matrixC(3, 3);
+	//matrixC(0, 0) = 5;
+	//matrixC(0, 1) = 7;
+	//matrixC(0, 2) = 3;
+	//matrixC(1, 0) = 5;
+	//matrixC(1, 1) = 7;
+	//matrixC(1, 2) = 2;
+	//matrixC(2, 0) = 7;
+	//matrixC(2, 1) = 5;
+	//matrixC(2, 2) = 3;
+	//matrix result = matrixC.getTriangular();
+
+	////std::cout << result;
+	//displayMatrix(result, 3, 3);
 
 	int countPoints = 1000000;
 	double** points = Generator::generatePoints(1, 30, countPoints);
@@ -108,7 +115,7 @@ int main()
 	double step = 0.001;
 
 	auto start = std::chrono::high_resolution_clock::now();
-	std::list<point>* resultApproximation = approximation::methodOfMinimumRoots(points, countPoints, degree, step);
+	std::list<point>* resultApproximation = approximation::parallelMethodOfMinimumRoots(points, countPoints, degree, step);
 	auto end = std::chrono::high_resolution_clock::now();
 	
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

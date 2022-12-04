@@ -33,13 +33,13 @@ namespace CSharp
             // Многопоточный метод
             stopWatch.Start();
 
-            var resultParallel = Approximation.ParallelMethodOfMinimumRoots(pointsList, degree, step);
+            var resultParallel = Approximation.ParallelMethodOfMinimumRoots(pointsArray, degree, step);
             stopWatch.Stop();
             Console.WriteLine("Multithreaded method time (ms): " + stopWatch.ElapsedMilliseconds);
             
             // Однопоточный метод
             stopWatch.Restart();
-            var resultSingle = Approximation.MethodOfMinimumRoots(pointsList, degree, step);
+            var resultSingle = Approximation.MethodOfMinimumRoots(pointsArray, degree, step);
             stopWatch.Stop();
             Console.WriteLine("Single thread method time (ms): " + stopWatch.ElapsedMilliseconds);
 

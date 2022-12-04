@@ -69,8 +69,8 @@ std::list<point>* approximation::methodOfMinimumRoots(std::list<point>* points, 
 	matrix argumentsMatrix(arguments, rows, argColumns);
 	matrix valuesMatrix(values, rows, valuesColumns);
 
-	matrix first = (argumentsMatrix.getTransporse() * argumentsMatrix).getInverse();
-	matrix second = argumentsMatrix.getTransporse() * valuesMatrix;
+	matrix first = (argumentsMatrix.getTranspose() * argumentsMatrix).getInverse();
+	matrix second = argumentsMatrix.getTranspose() * valuesMatrix;
 	matrix A = first * second;
 
 	for (double x = points->front().X; x < points->back().X; x += h)
@@ -123,8 +123,8 @@ std::list<point>* approximation::methodOfMinimumRoots(double** points, int count
 	matrix argumentsMatrix(arguments, rows, argColumns);
 	matrix valuesMatrix(values, rows, valuesColumns);
 
-	matrix first = (argumentsMatrix.getTransporse() * argumentsMatrix).getInverse();
-	matrix second = argumentsMatrix.getTransporse() * valuesMatrix;
+	matrix first = (argumentsMatrix.getTranspose() * argumentsMatrix).getInverse();
+	matrix second = argumentsMatrix.getTranspose() * valuesMatrix;
 	matrix A = first * second;
 
 	for (double x = points[0][0]; x < points[rows - 1][0]; x += h)
@@ -173,21 +173,6 @@ std::list<point>* approximation::parallelMethodOfMinimumRoots(double** points, i
 	int remnant = rows % processor_count; // Остаток от деления
 	int endIndex = countElements;
 
-	//for (size_t i = 0; i < processor_count; i++) // Запуск потоков 
-	//{
-	//	if (remnant != 0 && i == processor_count - 1)
-	//		endIndex += remnant;
-
-	//	threads[i] = std::thread(declareArrays, arguments, values, argumentsColumns, valuesColumns, startIndex, endIndex);
-
-	//	startIndex = endIndex;
-	//	endIndex += countElements;
-	//}
-	//for (size_t i = 0; i < processor_count; i++) // Ожидание завершения потоков 
-	//{
-	//	threads[i].join();
-	//}
-
 	startIndex = 0;
 	endIndex = countElements;
 	for (size_t i = 0; i < processor_count; i++) // Запуск потоков 
@@ -205,45 +190,13 @@ std::list<point>* approximation::parallelMethodOfMinimumRoots(double** points, i
 		threads[i].join();
 	}
 
-	/*auto threadsCount = std::thread::hardware_concurrency();
-	std::list<std::thread>* threads();*/
-	
-	/*for (int i = 0; i < rows; i++)
-	{
-		
-		std::thread t1([&]() {
-			for (size_t j = 0; j < argumentsColumns; j++)
-			{
-				arguments[i][j] = std::pow(points[i][0], j);
-			}
-		});
-		std::thread t2([&]() {
-			for (size_t j = 0; j < valuesColumns; j++)
-			{
-				values[i][j] = points[i][1];
-			}
-		});
-
-		t1.join();
-		t2.join();
-	}*/
-	
-
-	/*for (auto i = threads->begin(); i != threads->end(); i++)
-	{
-		threads[i]
-	}
-
-	for (std::thread thread : threads.begin())
-	{
-		thread.join();
-	}*/
-
 	matrix argumentsMatrix(arguments, rows, argumentsColumns);
 	matrix valuesMatrix(values, rows, valuesColumns);
 
-	matrix first = (argumentsMatrix.getTransporse() * argumentsMatrix).getInverse();
-	matrix second = argumentsMatrix.getTransporse() * valuesMatrix;
+	matrix first = argumentsMatrix.getTransposeAsParallel() * argumentsMatrix;
+	
+	matrix temp = first.getInverseAsParallel();
+	matrix second = argumentsMatrix.getTransposeAsParallel() * valuesMatrix;
 	matrix A = first * second;
 
 	for (double x = points[0][0]; x < points[rows - 1][0]; x += h)
