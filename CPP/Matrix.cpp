@@ -133,6 +133,7 @@ double matrix::getDeterminantAsParallel()
 	}
 
 	return det;
+	delete &det;
 }
 
 double matrix::getDeterminant()
@@ -221,14 +222,14 @@ matrix matrix::getTriangular()
 	return matrix(values, this->rows, this->columns);
 }
 
-void copy(double** result, double** original, int countColumns, int startIndex, int endIndex)
+void matrix::copy(double** result, int startIndex, int endIndex)
 {
 	for (size_t i = startIndex; i < endIndex; i++)
 	{
-		result[i] = new double[countColumns];
-		for (size_t j = 0; j < countColumns; j++)
+		result[i] = new double[columns];
+		for (size_t j = 0; j < columns; j++)
 		{
-			result[i][j] = original[i][j];
+			result[i][j] = this->values[i][j];
 		}
 	}
 }
@@ -253,7 +254,7 @@ double** matrix::copyAsParallel()
 		if (remnant != 0 && i == processor_count - 1)
 			endIndex += remnant;
 
-		threads[i] = std::thread(copy, result, this->values, this->columns, startIndex, endIndex);
+		threads[i] = std::thread(&matrix::copy, this, result, startIndex, endIndex);
 
 		startIndex = endIndex;
 		endIndex += countElements;

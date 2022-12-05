@@ -10,6 +10,7 @@ private:
 	void inverse(double** extraMatrix, int startIndex, int endIndex);
 	void transpose(matrix* result, int startIndex, int endIndex);
 	void determinant(std::atomic<double>& det, matrix* triangular, int startIndex, int endIndex);
+	void copy(double** result, int startIndex, int endIndex);
 	//void multiplication(matrix* result, matrix* matrixB, int startIndex, int endIndex);
 
 public:
