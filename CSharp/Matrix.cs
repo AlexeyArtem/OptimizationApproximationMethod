@@ -404,6 +404,21 @@ namespace CSharp
             });
             return new Matrix(result);
         }
+        public static Matrix MultiplicationAsParallel(Matrix matrixA, double num)
+        {
+            double[,] result = new double[matrixA.Rows, matrixA.Columns];
+            Parallel.For(0, result.GetLength(0), (i) =>
+            {
+                for (int j = 0; j < result.GetLength(1); j++)
+                {
+                    for (int k = 0; k < matrixA.Columns; k++)
+                    {
+                        result[i, j] += matrixA[i, k] * num;
+                    }
+                }
+            });
+            return new Matrix(result);
+        }
 
         public static Matrix operator*(Matrix matrix, double num) 
         {
