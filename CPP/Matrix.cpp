@@ -549,6 +549,46 @@ matrix matrix::operator- (matrix matrixB) // Many threads
 	return result;
 }
 
+matrix matrix::multOnMatrix(matrix matrixA, matrix matrixB)
+{
+	if (matrixA.columns != matrixB.rows)
+		throw new std::exception("Количество строк и столбцов перемножаемых матриц не совпадают.");
+		
+	matrix result(matrixA.rows, matrixB.columns);
+	for (int i = 0; i < result.rows; i++)
+	{
+		for (int j = 0; j < result.columns; j++)
+		{
+			double value = 0;
+			for (int k = 0; k < matrixA.columns; k++)
+			{
+				value += matrixA(i, k) * matrixB(k, j);
+			}
+			result(i, j) = value;
+		}
+	}
+		
+	return result;
+}
+matrix matrix::multOnNumber(matrix matrixA, double number)
+{
+	matrix result(matrixA.rows, matrixA.columns);
+	for (int i = 0; i < result.rows; i++)
+	{
+		for (int j = 0; j < result.columns; j++)
+		{
+			double value = 0;
+			for (int k = 0; k < matrixA.columns; k++)
+			{
+				value += matrixA(i, k) * number;
+			}
+			result(i, j) = value;
+		}
+	}
+
+	return result;
+}
+
 //matrix matrix::operator* (matrix matrixB) //Simple thread
 //{
 //	if (this->columns != matrixB.rows)

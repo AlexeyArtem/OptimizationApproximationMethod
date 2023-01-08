@@ -109,16 +109,69 @@ int main()
 	double step = 0.001;
 
 	matrix matrixA = generateMatrix(1000, 1000, 1, 99);
-	matrix matrixB = generateMatrix(100, 100, 1, 99);
+	matrix matrixB = generateMatrix(1000, 100, 1, 99);
 	matrix matrixC = generateMatrix(10, 10, 1, 99);
-	matrix matrixD = generateMatrix(100, 100, 1, 99);
+	matrix matrixD = generateMatrix(100, 1000, 1, 99);
+	double number = 33;
 
-	int countRepeats = 50;
+	int countRepeats = 2;
 	double timeSingleThread, timeManyThread, effectiveness;
 
 	auto start = std::chrono::high_resolution_clock::now();
 	auto end = std::chrono::high_resolution_clock::now();
 	auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+
+#pragma region TestMultiplicationMethods
+	//MOM - Matrix On Matrix
+	start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < countRepeats; i++)
+	{
+		matrix::multOnMatrix(matrixB, matrixD);
+	}
+	end = std::chrono::high_resolution_clock::now();
+
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	timeSingleThread = elapsed.count() / countRepeats;
+	std::cout << "Multiplication MOM method single thread (ms): " << timeSingleThread << std::endl; 
+
+	start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < countRepeats; i++)
+	{
+		matrixB * matrixD;
+	}
+	end = std::chrono::high_resolution_clock::now();
+
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	timeManyThread = elapsed.count() / countRepeats;
+	effectiveness = timeSingleThread / timeManyThread * 100 - 100;
+	std::cout << "Multiplication MOM method many thread (ms): " << timeManyThread << std::endl;
+	std::cout << "Effectiveness many thread method = " << effectiveness << "%" << std::endl << std::endl;
+
+	//MON - Matrix On Number
+	start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < countRepeats; i++)
+	{
+		matrix::multOnNumber(matrixB, number);
+	}
+	end = std::chrono::high_resolution_clock::now();
+
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	timeSingleThread = elapsed.count() / countRepeats;
+	std::cout << "Multiplication MON method single thread (ms): " << timeSingleThread << std::endl; 
+
+	start = std::chrono::high_resolution_clock::now();
+	for (size_t i = 0; i < countRepeats; i++)
+	{
+		matrixB * number;
+	}
+	end = std::chrono::high_resolution_clock::now();
+
+	elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
+	timeManyThread = elapsed.count() / countRepeats;
+	effectiveness = timeSingleThread / timeManyThread * 100 - 100;
+	std::cout << "Multiplication MON method many thread (ms): " << timeManyThread << std::endl;
+	std::cout << "Effectiveness many thread method = " << effectiveness << "%" << std::endl << std::endl;
+#pragma endregion
 	
 #pragma region TestTransposeMethods
 	start = std::chrono::high_resolution_clock::now();

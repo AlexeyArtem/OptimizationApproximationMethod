@@ -30,6 +30,8 @@ public:
 	double** copyMatrixValues();
 	double** copyAsParallel();
 	void display();
+	static matrix multOnMatrix(matrix matrixA, matrix matrixB);
+	static matrix multOnNumber(matrix matrixA, double number);
 
 	double& operator() (int i, int j);
 	matrix operator+ (matrix matrixB);
