@@ -356,7 +356,7 @@ int main()
 
     elapsed = end - start;
     time = elapsed.count() / countRepeats;
-    cout << "Time determinant matrix method (ms): " << time << "\n\n";
+    //cout << "Time determinant matrix method (ms): " << time << "\n\n";
 #pragma endregion
 
 #pragma region TestReductionDeterminant
