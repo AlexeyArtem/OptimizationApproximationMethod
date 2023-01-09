@@ -12,9 +12,11 @@
 
 using namespace std;
 
+
+
 #pragma region Функции ядра
-//__constant__ int THREADS_PER_BLOCK = 1024;
 const int THREADS_PER_BLOCK = 1024;
+
 // Функция ядра умножения матриц
 __global__ void multMatrixesKernel(double* A, double* B, double* C, int columnsA, int columnsB)
 {
@@ -82,9 +84,94 @@ __global__ void determinantMatrixKernel(double* triangular, unsigned int size, d
     {
         int index = y * size + y;
         double value = triangular[index];
-        //printf("index = %d\n", index);
-        //printf("value = %d\n", triangular[index]);
         atomicMult(det, value);
+    }
+}
+
+__global__ void reductionDeterminantMatrixKernel_1(double* triangular, unsigned int size, double* resultsBlocks)
+{
+    __shared__ double blockData[THREADS_PER_BLOCK];
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x; // Номер потока по X
+    int y = blockIdx.y * blockDim.y + threadIdx.y; // Номер потока по Y
+
+    if (y == x && y < size)
+    {
+        int threadId = threadIdx.x;
+        int triangularIndex = y * size + y;
+
+        blockData[threadId] = triangular[triangularIndex];
+        __syncthreads();
+
+        for (int i = 1; i < THREADS_PER_BLOCK; i *= 2)
+        {
+            int index = 2 * i * threadId;
+            if ((index + i) < THREADS_PER_BLOCK && blockData[index + i] != 0)
+            {
+                blockData[index] *= blockData[index + i];
+                __syncthreads();
+            }
+        }
+        if (threadId == 0)
+            resultsBlocks[blockIdx.x] = blockData[0];
+    }
+}
+
+__global__ void reductionDeterminantMatrixKernel_2(double* triangular, unsigned int size, double* resultsBlocks)
+{
+    __shared__ double blockData[THREADS_PER_BLOCK];
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x; // Номер потока по X
+    int y = blockIdx.y * blockDim.y + threadIdx.y; // Номер потока по Y
+
+    if (y == x && y < size)
+    {
+        int threadId = threadIdx.x;
+        int triangularIndex = y * size + y;
+
+        blockData[threadId] = triangular[triangularIndex];
+        __syncthreads();
+
+        for (int i = 1; i < THREADS_PER_BLOCK; i *= 2)
+        {
+            int index = threadId + i;
+            if (threadId % (2 * i) == 0 && blockData[index] != 0)
+            {
+                blockData[threadId] *= blockData[index];
+                __syncthreads();
+            }
+        }
+        if (threadId == 0)
+            resultsBlocks[blockIdx.x] = blockData[0];
+    }
+}
+
+__global__ void reductionDeterminantMatrixKernel_3(double* triangular, unsigned int size, double* resultsBlocks)
+{
+    __shared__ double blockData[THREADS_PER_BLOCK];
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x; // Номер потока по X
+    int y = blockIdx.y * blockDim.y + threadIdx.y; // Номер потока по Y
+
+    if (y == x && y < size)
+    {
+        int threadId = threadIdx.x;
+        int triangularIndex = y * size + y;
+
+        blockData[threadId] = triangular[triangularIndex];
+        __syncthreads();
+
+        for (int i = THREADS_PER_BLOCK / 2; i > 0; i >>= 1)
+        {
+            int index = threadId + i;
+            if (threadId < i && blockData[index] != 0)
+            {
+                blockData[threadId] *= blockData[index];
+            }
+            __syncthreads();
+        }
+        if (threadId == 0)
+            resultsBlocks[blockIdx.x] = blockData[0];
     }
 }
 
@@ -97,6 +184,45 @@ __device__ void warpReduce(volatile double* sdata, int tid)
     sdata[tid] += sdata[tid + 2];
     sdata[tid] += sdata[tid + 1];
 }
+__global__ void reductionDeterminantMatrixKernel_5(double* triangular, unsigned int size, double* resultsBlocks)
+{
+    __shared__ double blockData[THREADS_PER_BLOCK];
+
+    int x = blockIdx.x * blockDim.x + threadIdx.x; // Номер потока по X
+    int y = blockIdx.y * blockDim.y + threadIdx.y; // Номер потока по Y
+
+    if (y == x && y < size)
+    {
+        int threadId = threadIdx.x;
+        int triangularIndex = y * size + y;
+
+        blockData[threadId] = triangular[triangularIndex];
+        __syncthreads();
+
+        for (int i = THREADS_PER_BLOCK / 2; i > 0; i >>= 1)
+        {
+            int index = threadId + i;
+            if (threadId < i&& blockData[index] != 0)
+            {
+                blockData[threadId] *= blockData[index];
+            }
+            __syncthreads();
+        }
+
+        for (unsigned int i = THREADS_PER_BLOCK / 2; i > 32; i >>= 1)
+        {
+            int index = threadId + i;
+            if (threadId < i && blockData[index] != 0)
+                blockData[threadId] *= blockData[index];
+            __syncthreads();
+        }
+        if (threadId < 32)
+            warpReduce(blockData, threadId);
+
+        if (threadId == 0)
+            resultsBlocks[blockIdx.x] = blockData[0];
+    }
+}
 
 template <unsigned int blockSize>
 __device__ void warpReduceTemp(volatile double* sdata, int tid)
@@ -108,71 +234,32 @@ __device__ void warpReduceTemp(volatile double* sdata, int tid)
     if (blockSize >= 4) sdata[tid] += sdata[tid + 2];
     if (blockSize >= 2) sdata[tid] += sdata[tid + 1];
 }
-
-// Функция ядра редукции для вычисления детерминанта
-__global__ void reductionDeterminantMatrixKernel(double* triangular, unsigned int size, double* resultsBlocks) 
+template <unsigned int blockSize>
+__global__ void reductionDeterminantMatrixKernel_6(double* triangular, unsigned int size, double* resultsBlocks)
 {
     __shared__ double blockData[THREADS_PER_BLOCK];
 
     int x = blockIdx.x * blockDim.x + threadIdx.x; // Номер потока по X
     int y = blockIdx.y * blockDim.y + threadIdx.y; // Номер потока по Y
 
-    if (y == x && y < size) 
+    if (y == x && y < size)
     {
         int threadId = threadIdx.x;
-        int index = y * size + y;
+        int triangularIndex = y * size + y;
 
-        blockData[threadId] = triangular[index];
+        blockData[threadId] = triangular[triangularIndex];
         __syncthreads();
 
-        for (int i = 1; i < THREADS_PER_BLOCK; i *= 2)
-        {
-            // v1
-            /*int index = threadId + i;
-            if (threadId % (2 * i) == 0 && blockData[index] != 0)
-            {
-                blockData[threadId] *= blockData[index];
-                __syncthreads();
-            }*/
-
-            // v2
-            int index = 2 * i * threadId;
-            if ((index + i) < THREADS_PER_BLOCK && blockData[index + i] != 0)
-            {
-                blockData[index] *= blockData[index + i];
-                __syncthreads();
-            }
-        }
-
-        // v3
-        /*for (int i = THREADS_PER_BLOCK / 2; i > 0; i >>= 1)
+        for (int i = THREADS_PER_BLOCK / 2; i > 0; i >>= 1)
         {
             int index = threadId + i;
-            if (threadId < i && blockData[index] != 0)
+            if (threadId < i&& blockData[index] != 0)
             {
                 blockData[threadId] *= blockData[index];
             }
             __syncthreads();
-        }*/
+        }
 
-        // v5
-        /*for (unsigned int i = blockDim.x / 2; i > 32; i >>= 1) 
-        {
-            int index = threadId + i;
-            if (threadId < i && blockData[index] != 0)
-                blockData[threadId] *= blockData[index];
-            __syncthreads();
-        }
-        if (threadId < 32)
-            warpReduce(blockData, threadId);*/
-        // v6
-        /*for (unsigned int i = blockDim.x / 2; i > 32; i >>= 1)
-        {
-            int index = threadId + i;
-            if (threadId < i && blockData[index] != 0)
-                blockData[threadId] *= blockData[index];
-            __syncthreads();
-        }
         if (THREADS_PER_BLOCK >= 512) {
             if (threadId < 256) { blockData[threadId] += blockData[threadId + 256]; } __syncthreads();
         }
@@ -182,30 +269,13 @@ __global__ void reductionDeterminantMatrixKernel(double* triangular, unsigned in
         if (THREADS_PER_BLOCK >= 128) {
             if (threadId < 64) { blockData[threadId] += blockData[threadId + 64]; } __syncthreads();
         }
-        if (threadId < 32) warpReduce<THREADS_PER_BLOCK>(blockData, threadId);*/
+        if (threadId < 32) warpReduceTemp<THREADS_PER_BLOCK>(blockData, threadId);
 
         if (threadId == 0)
             resultsBlocks[blockIdx.x] = blockData[0];
     }
-
-    /*int threadId = threadIdx.x;
-    int index = blockIdx.x * blockDim.x + threadIdx.x;
-    if (index < size)
-    {
-        blockData[threadId] = triangular[index];
-        __syncthreads();
-
-        for (int i = 1; i < blockDim.x; i *= 2) 
-        {
-            if (threadId % (2 * i) == 0)
-                blockData[threadId] *= blockData[threadId + i];
-            __syncthreads();
-        }
-
-        if (threadId == 0)
-            resultsBlocks[blockIdx.x] = blockData[0];
-    }*/
 }
+
 
 #pragma endregion
 
@@ -214,7 +284,7 @@ void multMatrixesWithCuda(double* C, double* A, double* B, unsigned int rowsA, u
 void multMatrixWithCuda(double* matrix, unsigned int rows, unsigned int columns, double value);
 void transporseMatrixWithCuda(double* result, double* matrix, unsigned int rows, unsigned int columns);
 double getDeterminantWithCuda(double* matrix, unsigned int rows, unsigned int columns);
-double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsigned int columns);
+double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsigned int columns, int reductionNum, double* elapsedKernel);
 double* getTriangularMatrix(double* matrix, unsigned int rows, unsigned int columns);
 double* generateMatrix(int rows, int columns, int minValue, int maxValue);
 
@@ -227,13 +297,13 @@ int main()
     chrono::duration<double, std::milli> elapsed = end - start;
 
     unsigned int rowsMatrixA, columnsMatrixA;
-    rowsMatrixA = 100;
-    columnsMatrixA = 100;
-    double* matrixA = generateMatrix(rowsMatrixA, columnsMatrixA, 1, 5);
+    rowsMatrixA = 1000;
+    columnsMatrixA = 1000;
+    double* matrixA = generateMatrix(rowsMatrixA, columnsMatrixA, 1, 99);
 
     unsigned int rowsMatrixB, columnsMatrixB;
-    rowsMatrixB = 100;
-    columnsMatrixB = 100;
+    rowsMatrixB = 1000;
+    columnsMatrixB = 1000;
     double* matrixB = generateMatrix(rowsMatrixB, columnsMatrixB, 1, 99);
 
     // Тестовый вызов метода для инитиализации среды выполнения CUDA
@@ -253,7 +323,7 @@ int main()
 
     elapsed = end - start;
     time = elapsed.count() / countRepeats;
-    cout << "Time transpose method (ms): " << time << "\n\n";
+    //cout << "Time transpose method (ms): " << time << "\n\n";
     
     delete[] resultTransporse;
 #pragma endregion
@@ -270,7 +340,7 @@ int main()
 
     elapsed = end - start;
     time = elapsed.count() / countRepeats;
-    cout << "Time multiplication matrix method (ms): " << time << "\n\n";
+    //cout << "Time multiplication matrix method (ms): " << time << "\n\n";
     
     delete[] resultMultMatrixes;
 #pragma endregion
@@ -280,7 +350,7 @@ int main()
     for (size_t i = 0; i < countRepeats; i++)
     {
         double det = getDeterminantWithCuda(matrixA, rowsMatrixA, columnsMatrixA);
-        cout << "det = " << det << "\n";
+        //cout << "det = " << det << "\n";
     }
     end = chrono::high_resolution_clock::now();
 
@@ -290,17 +360,28 @@ int main()
 #pragma endregion
 
 #pragma region TestReductionDeterminant
-    start = chrono::high_resolution_clock::now();
-    for (size_t i = 0; i < countRepeats; i++)
+    for (int reductionNum = 1; reductionNum <= 6; reductionNum++)
     {
-        double det = getDeterminantWithCudaReduction(matrixA, rowsMatrixA, columnsMatrixA);
-        cout << "reduction det = " << det << "\n";
-    }
-    end = chrono::high_resolution_clock::now();
+        if (reductionNum == 4) continue;
+        double sumElapsedKernel = 0;
+        double* elapsedKernel = (double*)malloc(sizeof(double));
+        //start = chrono::high_resolution_clock::now();
+        for (size_t i = 0; i < countRepeats; i++)
+        {
+            getDeterminantWithCudaReduction(matrixA, rowsMatrixA, columnsMatrixA, reductionNum, elapsedKernel);
+            sumElapsedKernel += *elapsedKernel;
+        }
+        //end = chrono::high_resolution_clock::now();
 
-    elapsed = end - start;
+        //elapsed = end - start;
+        //time = elapsed.count() / countRepeats;
+        time = sumElapsedKernel / countRepeats;
+        cout << "Time reduction " << reductionNum << " determinant matrix kernel method(ms): " << time << "\n\n";
+    }
+
+    /*elapsed = end - start;
     time = elapsed.count() / countRepeats;
-    cout << "Time reduction determinant matrix method (ms): " << time << "\n\n";
+    cout << "Time reduction determinant matrix method (ms): " << time << "\n\n";*/
 #pragma endregion
 
 #pragma region TestMultMatrix
@@ -313,7 +394,7 @@ int main()
 
     elapsed = end - start;
     time = elapsed.count() / countRepeats;
-    cout << "Time multiplication matrix by number method (ms): " << time << "\n\n";
+    //cout << "Time multiplication matrix by number method (ms): " << time << "\n\n";
 #pragma endregion
 
     return 0;
@@ -412,8 +493,8 @@ void multMatrixesWithCuda(double* C, double* A, double* B, unsigned int rowsA, u
     int threadsPerBlockDim = sqrt(props.maxThreadsPerBlock);
     dim3 blockDim(threadsPerBlockDim, threadsPerBlockDim);
 
-    int blocksPerGridDimX = ceilf(columnsB / threadsPerBlockDim);
-    int blocksPerGridDimY = ceilf(rowsA / threadsPerBlockDim);
+    int blocksPerGridDimX = ceilf(columnsA / threadsPerBlockDim);
+    int blocksPerGridDimY = ceilf(rowsB / threadsPerBlockDim);
     dim3 gridDim(blocksPerGridDimX, blocksPerGridDimY);
 
     auto start = chrono::high_resolution_clock::now();
@@ -567,7 +648,7 @@ double getDeterminantWithCuda(double* matrix, unsigned int rows, unsigned int co
 }
 
 // Получение детерминанта с помощью редукции
-double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsigned int columns)
+double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsigned int columns, int reductionNum, double* elapsedKernel)
 {
     if (rows != columns)
         throw std::invalid_argument("Матрица не является квадратичной.");
@@ -579,7 +660,7 @@ double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsign
     cudaGetDeviceProperties(&props, 0);
     int threadsPerBlock = props.maxThreadsPerBlock;
     //int blocks = ceilf((size + threadsPerBlock - 1) / (float)threadsPerBlock);
-    
+
     int threadsPerBlockDim = sqrt(threadsPerBlock);
     dim3 blockDim(threadsPerBlockDim, threadsPerBlockDim);
 
@@ -595,14 +676,29 @@ double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsign
     cudaMemcpy(devTriangular, triangular, rows * columns * sizeof(double), cudaMemcpyHostToDevice);
 
     auto start = chrono::high_resolution_clock::now();
-
     // Запуск ядра
-    reductionDeterminantMatrixKernel << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
-    cudaDeviceSynchronize();
+    switch (reductionNum)
+    {
+        case 1:
+            reductionDeterminantMatrixKernel_1 << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
 
+        case 2:
+            reductionDeterminantMatrixKernel_2 << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
+        case 3:
+            reductionDeterminantMatrixKernel_3 << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
+        case 5:
+            reductionDeterminantMatrixKernel_5 << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
+        case 6:
+            reductionDeterminantMatrixKernel_6<THREADS_PER_BLOCK> << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
+
+        default:
+            reductionDeterminantMatrixKernel_1 << <gridDim, blockDim >> > (devTriangular, size, devResultsBlocks);
+    }
     auto end = chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> elapsed = end - start;
-    cout << "Time reduction determinant matrix kernel method (ms): " << elapsed.count() << std::endl;
+    *elapsedKernel = elapsed.count();
+
+    cudaDeviceSynchronize();
 
     double* resultsBlocks = (double*)malloc(blocks * sizeof(double)); // Результаты вычисления блоков на хосте
     cudaMemcpy(resultsBlocks, devResultsBlocks, blocks * sizeof(double), cudaMemcpyDeviceToHost);
@@ -611,7 +707,7 @@ double getDeterminantWithCudaReduction(double* matrix, unsigned int rows, unsign
     double det = 1;
     for (size_t i = 0; i < blocks; i++)
     {
-        if(resultsBlocks[i] != 0)
+        if (resultsBlocks[i] != 0)
             det *= resultsBlocks[i];
     }
 
