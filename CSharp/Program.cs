@@ -19,140 +19,177 @@ namespace CSharp
             Stopwatch stopWatch = new Stopwatch();
 
             Matrix matrixA = generateMatrix(1000, 1000, 1, 99);
-            Matrix matrixB = generateMatrix(100, 100, 1, 99);
-            Matrix matrixC = generateMatrix(10000, 1000, 1, 99);
+            Matrix matrixB = generateMatrix(1000, 1000, 1, 99);
+            Matrix matrixC = generateMatrix(1000, 1000, 1, 99);
             Matrix matrixD = generateMatrix(100, 100, 1, 99);
             double number = 33;
 
             int countRepeats = 3;
 
-            double timeSingleThread, timeManyThread, effectiveness;
+            double timeSingleThread, timeManyThread, timeArray, timeList, effectivenessThread, effectivenessStruct;
 
             #region TestMNK
-                int degree = 5;
-                double step = 0.001;
-                List<Point> pointsList = Generator.GeneratePoints(1, 30, 1000000);
-                //var pointsList = FileService.ReadFromJson<List<Point>>("data.json");
+            Console.WriteLine("The method of least roots:");
+            int degree = 5;
+            double step = 0.001;
+            List<Point> pointsList = Generator.GeneratePoints(1, 30, 1000000);
+            //var pointsList = FileService.ReadFromJson<List<Point>>("data.json");
 
-                pointsList = pointsList.AsParallel().OrderBy(p => p.X).ToList();
-                //pointsList = pointsList.OrderBy(p => p.X).ToList();
-                Point[] pointsArray = pointsList.ToArray();
+            pointsList = pointsList.AsParallel().OrderBy(p => p.X).ToList();
+            //pointsList = pointsList.OrderBy(p => p.X).ToList();
+            Point[] pointsArray = pointsList.ToArray();
 
-                // Многопоточный метод
-                stopWatch.Start();
-                Approximation.ParallelMethodOfMinimumRoots(pointsArray, degree, step);
-                stopWatch.Stop();
+            // Однопоточный метод с массивом
+            stopWatch.Start();
+            Approximation.MethodOfMinimumRoots(pointsArray, degree, step);
+            stopWatch.Stop();
 
-                timeManyThread = stopWatch.ElapsedMilliseconds;
-                Console.WriteLine("Multithreaded MNK time (ms): " + timeManyThread);
+            timeArray = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Singlethreaded with array (ms): " + timeArray);
 
-                // Однопоточный метод
-                stopWatch.Restart();
-                Approximation.MethodOfMinimumRoots(pointsArray, degree, step);
-                stopWatch.Stop();
+            // Однопоточный метод с листом
+            stopWatch.Restart();
+            Approximation.MethodOfMinimumRoots(pointsList, degree, step);
+            stopWatch.Stop();
 
-                timeSingleThread = stopWatch.ElapsedMilliseconds;
-                effectiveness = timeSingleThread / timeManyThread * 100 - 100;
-                Console.WriteLine("Single thread MNK time (ms): " + timeSingleThread);
-                Console.WriteLine("Effectiveness many thread method = " + effectiveness + "\n");
+            timeList= stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Singlethreaded with list (ms): " + timeList);
+
+            effectivenessStruct = timeList / timeArray;
+            Console.WriteLine("Effectiveness struct = " + Math.Round(effectivenessStruct, 3)  + "x\n");
+            if (timeArray < timeList) timeSingleThread = timeArray;
+            else timeSingleThread = timeList;
+
+            // Многопоточный метод c массивом
+            stopWatch.Restart();
+            Approximation.ParallelMethodOfMinimumRoots(pointsArray, degree, step);
+            stopWatch.Stop();
+
+            timeArray = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Multithreaded with array (ms): " + timeArray);
+
+            // Многопоточный метод c листом
+            stopWatch.Restart();
+            Approximation.ParallelMethodOfMinimumRoots(pointsList, degree, step);
+            stopWatch.Stop();
+
+            timeList = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Multithreaded with list (ms): " + timeList);
+
+            effectivenessStruct = timeList / timeArray;
+            Console.WriteLine("Effectiveness struct = " + Math.Round(effectivenessStruct, 3) + "x\n");
+
+            if (timeArray < timeList) timeManyThread = timeArray;
+            else timeManyThread = timeList;
+            effectivenessThread = timeSingleThread / timeManyThread;
+            Console.WriteLine("Effectiveness multithread = " + Math.Round(effectivenessThread, 3) + "x\n");
 
             #endregion TestMNK
 
             #region TestDeterminant
-            stopWatch.Start();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    matrixB.GetDeterminantAsParallel();
-                }
-                stopWatch.Stop();
+            Console.WriteLine("Determinant matrix:");
 
-                timeManyThread = stopWatch.ElapsedMilliseconds;
-                Console.WriteLine("Determinant method many thread (ms): " + timeManyThread);
+            stopWatch.Restart();
+            for (int i = 0; i < countRepeats; i++)
+            {
+                matrixA.GetDeterminant();
+            }
+            stopWatch.Stop();
 
-                stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    matrixB.GetDeterminant();
-                }
-                stopWatch.Stop();
+            timeSingleThread = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Singlethreaded (ms): " + timeSingleThread);
 
-                timeSingleThread = stopWatch.ElapsedMilliseconds;
-                effectiveness = timeSingleThread / timeManyThread * 100 - 100;
-                Console.WriteLine("Determinant method single thread (ms): " + timeSingleThread);
-                Console.WriteLine("Effectiveness many thread method = " + effectiveness + "\n");
+            stopWatch.Restart();
+            for (int i = 0; i < countRepeats; i++)
+            {
+                matrixA.GetDeterminantAsParallel();
+            }
+            stopWatch.Stop();
+
+            timeManyThread = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Multithreaded (ms): " + timeManyThread);
+
+            effectivenessThread = timeSingleThread / timeManyThread;
+            Console.WriteLine("Effectiveness = " + Math.Round(effectivenessThread, 3) + "x\n");
 
             #endregion TestDeterminant
 
             #region TestTranspose
+            Console.WriteLine("Transpose matrix:");
+
             stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    matrixC.GetTransporseAsParallel();
-                }
-                stopWatch.Stop();
+            for (int i = 0; i < countRepeats; i++)
+            {
+                matrixA.GetTransporse();
+            }
+            stopWatch.Stop();
 
-                timeManyThread = stopWatch.ElapsedMilliseconds;
-                Console.WriteLine("Transpose method many thread (ms): " + timeManyThread);
+            timeSingleThread = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Singlethreaded (ms): " + timeSingleThread);
 
-                stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    matrixC.GetTransporse();
-                }
-                stopWatch.Stop();
+            stopWatch.Restart();
+            for (int i = 0; i < countRepeats; i++)
+            {
+                matrixA.GetTransporseAsParallel();
+            }
+            stopWatch.Stop();
 
-                timeSingleThread = stopWatch.ElapsedMilliseconds;
-                effectiveness = timeSingleThread / timeManyThread * 100 - 100;
-                Console.WriteLine("Transpose method single thread (ms): " + timeSingleThread);
-                Console.WriteLine("Effectiveness many thread method = " + effectiveness + "\n");
+            timeManyThread = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Multithreaded (ms): " + timeManyThread);
+
+            effectivenessThread = timeSingleThread / timeManyThread;
+            Console.WriteLine("Effectiveness = " + Math.Round(effectivenessThread, 3) + "x\n");
             #endregion TestTranspose
 
             #region TestMultiplicationMatrixOnMatrix
+            Console.WriteLine("Multiplication matrix:");
+
             stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    Matrix.MultiplicationAsParallel(matrixB, matrixD);
-                }
-                stopWatch.Stop();
+            for (int i = 0; i < countRepeats; i++)
+            {
+                var res = matrixB * matrixC;
+            }
+            stopWatch.Stop();
 
-                timeManyThread = stopWatch.ElapsedMilliseconds;
-                Console.WriteLine("Multiplication method many thread (ms): " + timeManyThread);
+            timeSingleThread = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Singlethreaded (ms): " + timeSingleThread);
 
-                stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    var res = matrixB * matrixD;
-                }
-                stopWatch.Stop();
+            stopWatch.Restart();
+            for (int i = 0; i < countRepeats; i++)
+            {
+                Matrix.MultiplicationAsParallel(matrixB, matrixC);
+            }
+            stopWatch.Stop();
 
-                timeSingleThread = stopWatch.ElapsedMilliseconds;
-                effectiveness = timeSingleThread / timeManyThread * 100 - 100;
-                Console.WriteLine("Multiplication MOM method single thread (ms): " + timeSingleThread);
-                Console.WriteLine("Effectiveness many thread method = " + effectiveness + "\n");
+            timeManyThread = stopWatch.ElapsedMilliseconds;
+            Console.WriteLine("Multithreaded (ms): " + timeManyThread);
+
+            effectivenessThread = timeSingleThread / timeManyThread;    
+            Console.WriteLine("Effectiveness many thread method = " + Math.Round(effectivenessThread, 3) + "x\n");
             #endregion TestMultiplicationMatrixOnMatrix
 
             #region TestMultiplicationMatrixOnNumber
-            stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    Matrix.MultiplicationAsParallel(matrixB, number);
-                }
-                stopWatch.Stop();
+            //stopWatch.Restart();
+            //    for (int i = 0; i < countRepeats; i++)
+            //    {
+            //        Matrix.MultiplicationAsParallel(matrixB, number);
+            //    }
+            //    stopWatch.Stop();
 
-                timeManyThread = stopWatch.ElapsedMilliseconds;
-                Console.WriteLine("Multiplication MON method many thread (ms): " + timeManyThread);
+            //    timeManyThread = stopWatch.ElapsedMilliseconds;
+            //    Console.WriteLine("Multiplication MON method many thread (ms): " + timeManyThread);
 
-                stopWatch.Restart();
-                for (int i = 0; i < countRepeats; i++)
-                {
-                    var res = matrixB * number;
-                }
-                stopWatch.Stop();
+            //    stopWatch.Restart();
+            //    for (int i = 0; i < countRepeats; i++)
+            //    {
+            //        var res = matrixB * number;
+            //    }
+            //    stopWatch.Stop();
 
-                timeSingleThread = stopWatch.ElapsedMilliseconds;
-                effectiveness = timeSingleThread / timeManyThread * 100 - 100;
-                Console.WriteLine("Multiplication MON method single thread (ms): " + timeSingleThread);
-                Console.WriteLine("Effectiveness many thread method = " + effectiveness + "\n");
+            //    timeSingleThread = stopWatch.ElapsedMilliseconds;
+            //    effectivenessThread = timeSingleThread / timeManyThread * 100 - 100;
+            //    Console.WriteLine("Multiplication MON method single thread (ms): " + timeSingleThread);
+            //    Console.WriteLine("Effectiveness many thread method = " + effectivenessThread + "\n");
             #endregion TestMultiplicationMatrixOnNumber
 
             Console.Read();
