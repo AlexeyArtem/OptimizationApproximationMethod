@@ -27,10 +27,6 @@ namespace CSharp
                     arguments[i, j] = Math.Pow(point.X, j);
                 }
                 values[i, 0] = point.Y;
-                //for (int j = 0; j < values.GetLength(1); j++)
-                //{
-                //    values[i, j] = point.Y;
-                //}
                 i++;
             }
 
@@ -70,10 +66,6 @@ namespace CSharp
                     arguments[i, j] = Math.Pow(points[i].X, j);
                 }
                 values[i, 0] = points[i].Y;
-                //for (int j = 0; j < values.GetLength(1); j++)
-                //{
-                //    values[i, j] = points[i].Y;
-                //}
             }
 
             Matrix argumentsMatrix = new Matrix(arguments);
@@ -182,10 +174,6 @@ namespace CSharp
                     arguments[i, j] = Math.Pow(points[i].X, j);
                 }
                 values[i, 0] = points[i].Y;
-                //for (int k = 0; k < values.GetLength(1); k++)
-                //{
-                //    values[i, k] = points[i].Y;
-                //}
             });
             #endregion
 
@@ -195,11 +183,7 @@ namespace CSharp
             Matrix first = Matrix.MultiplicationAsParallel(argumentsMatrix.GetTransporseAsParallel(), argumentsMatrix).GetInverseAsParallel();
             Matrix second = Matrix.MultiplicationAsParallel(argumentsMatrix.GetTransporseAsParallel(), valuesMatrix);
             Matrix A = Matrix.MultiplicationAsParallel(first, second);
-            //Matrix first = (argumentsMatrix.GetTransporse() * argumentsMatrix).GetInverse();
-            //Matrix second = argumentsMatrix.GetTransporse() * valuesMatrix;
-            //Matrix A = first * second;
 
-            // Распараллелить 
             var count = points.Last().X / h;
 
             for (double x = points.First().X; x <= points.Last().X; x += h)
@@ -301,13 +285,8 @@ namespace CSharp
                     arguments[i, j] = Math.Pow(points[i].X, j);
                 }
                 values[i, 0] = points[i].Y;
-                //for (int k = 0; k < values.GetLength(1); k++)
-                //{
-                //    values[i, k] = points[i].Y;
-                //}
             });
             #endregion
-
 
             Matrix argumentsMatrix = new Matrix(arguments);
             Matrix valuesMatrix = new Matrix(values);
@@ -315,11 +294,7 @@ namespace CSharp
             Matrix first = Matrix.MultiplicationAsParallel(argumentsMatrix.GetTransporseAsParallel(), argumentsMatrix).GetInverseAsParallel();
             Matrix second = Matrix.MultiplicationAsParallel(argumentsMatrix.GetTransporseAsParallel(), valuesMatrix);
             Matrix A = Matrix.MultiplicationAsParallel(first, second);
-            //Matrix first = (argumentsMatrix.GetTransporse() * argumentsMatrix).GetInverse();
-            //Matrix second = argumentsMatrix.GetTransporse() * valuesMatrix;
-            //Matrix A = first * second;
 
-            // Попробоавать распараллелить
             for (double x = points[0].X; x <= points[points.Length - 1].X; x += h)
             {
                 double y = 0;

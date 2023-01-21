@@ -160,25 +160,6 @@ matrix matrix::getTriangular()
 
 	double** values = copyMatrixValues();
 
-	/*for (size_t i = 0; i < this->rows; i++)
-	{
-		for (size_t j = 0; j < this->columns; j++)
-		{
-			std::cout << this->values[i][j] << " ";
-		}
-		std::cout << "\n";
-	}
-	std::cout << "\n";
-
-	for (size_t i = 0; i < this->rows; i++)
-	{
-		for (size_t j = 0; j < this->columns; j++)
-		{
-			std::cout << values[i][j] << " ";
-		}
-		std::cout << "\n";
-	}*/
-
 	for (int i = 0; i < this->rows - 1; i++)
 	{
 		for (int j = i + 1; j < this->columns; j++)
@@ -210,8 +191,7 @@ matrix matrix::getTriangular()
 	{
 		for (int j = 0; j < this->columns; j++)
 		{
-			double value = values[i][j];
-			//std::cout << value << "\n";
+			double value = values[i][j];;
 			if (std::isnan(value))
 			{
 				values[i][j] = 0;
@@ -371,8 +351,6 @@ double matrix::getAlgebraicExtra(int indexRow, int indexColumn)
 	if (indexRow > rows || indexColumn > columns || indexRow < 1 || indexColumn < 1)
 		throw new std::exception("Îøèáêà");
 
-	
-	//double** minor = new double* [rows - 1];
 	matrix minor = matrix(this->rows - 1, this->columns - 1);
 
 	int row, col;

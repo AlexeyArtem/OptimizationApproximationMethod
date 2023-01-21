@@ -36,7 +36,6 @@ namespace CSharp
             //var pointsList = FileService.ReadFromJson<List<Point>>("data.json");
 
             pointsList = pointsList.AsParallel().OrderBy(p => p.X).ToList();
-            //pointsList = pointsList.OrderBy(p => p.X).ToList();
             Point[] pointsArray = pointsList.ToArray();
 
             // Однопоточный метод с массивом
@@ -83,7 +82,6 @@ namespace CSharp
             else timeManyThread = timeList;
             effectivenessThread = timeSingleThread / timeManyThread;
             Console.WriteLine("Effectiveness multithread = " + Math.Round(effectivenessThread, 3) + "x\n");
-
             #endregion TestMNK
 
             #region TestDeterminant
@@ -111,7 +109,6 @@ namespace CSharp
 
             effectivenessThread = timeSingleThread / timeManyThread;
             Console.WriteLine("Effectiveness = " + Math.Round(effectivenessThread, 3) + "x\n");
-
             #endregion TestDeterminant
 
             #region TestTranspose

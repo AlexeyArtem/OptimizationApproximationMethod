@@ -48,18 +48,15 @@ namespace CSharp
                 values[i, j] = value;
             }
         }
-
         public Matrix(double[,] values)
         {
             this.values = CopyMatrixValues(values);
         }
-
         private bool CheckQuadraticity()
         {
             if (values.GetLength(0) == values.GetLength(1)) return true;
             else return false;
         }
-
         private double[,] CopyMatrixValues(double[,] values)
         {
             double[,] copyValues = new double[values.GetLength(0), values.GetLength(1)];
@@ -67,7 +64,6 @@ namespace CSharp
 
             return copyValues;
         }
-
         private double[,] CopyMatrixValuesAsParallel(double[,] values)
         {
             double[,] copyValues = new double[values.GetLength(0), values.GetLength(1)];
@@ -82,7 +78,6 @@ namespace CSharp
 
             return copyValues;
         }
-
         private double[,] CopyMatrixValues(Matrix matrix)
         {
             double[,] copyValues = new double[matrix.Rows, matrix.Columns];
@@ -96,7 +91,6 @@ namespace CSharp
 
             return copyValues;
         }
-
         private void CheckNaN(double[,] values)
         {
             for (int i = 0; i < values.GetLength(0); i++)
@@ -107,7 +101,6 @@ namespace CSharp
                 }
             }
         }
-
         private double GetAlgebraicExtra(double[,] matrix, int indexRow, int indexColumn)
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
@@ -147,7 +140,6 @@ namespace CSharp
 
             int row, col;
             row = col = 0;
-            // Можно ли распараллелить данный цикл?
             for (int i = 0; i < matrix.GetLength(1); i++)
             {
                 for (int j = 0; j < matrix.GetLength(0); j++)
@@ -219,7 +211,6 @@ namespace CSharp
 
             double[,] values = CopyMatrixValues(this.values);
 
-            // Можно ли распараллелить этот цикл?
             for (int i = 0; i < values.GetLength(0) - 1; i++)
             {
                 for (int j = i + 1; j < values.GetLength(1); j++)
@@ -258,7 +249,6 @@ namespace CSharp
 
             double[,] values = CopyMatrixValuesAsParallel(this.values);
 
-            // Можно ли распараллелить даный цикл?
             for (int i = 0; i < values.GetLength(0) - 1; i++)
             {
                 for (int j = i + 1; j < values.GetLength(1); j++)
@@ -339,7 +329,6 @@ namespace CSharp
 
             return det;
         }
-
         public double GetDeterminantAsParallel()
         {
             if (!IsQuadraticity) throw new MatrixNotQuadraticException("Матрица не является квадратичной.");
